@@ -56,8 +56,8 @@ class Data:
         # y2 = np.random.normal(mu, sigma, 10)
 
         # multiply the data with pi to get the angle on the bloch sphere
-        x1 = x1 * np.pi
-        x2 = x2 * np.pi
+        x1 = -np.pi/2 + np.pi*(x1 - minimum)/(maximum-minimum)
+        x2 = -np.pi/2 + np.pi*(x1 - minimum)/(maximum-minimum)
         self.clusters = [x1, x2]
         self.plot_clusters(self.clusters)
 
@@ -152,15 +152,15 @@ def objective_function(params):
 
             qc_j = transpile(get_var_form([dps[j]], params, qubits), backend=qi_backend)
             result_j = qi_backend.run(qc_j).result()
-            cost += norm(np.array([dps[i]]), np.array([dps[j]])) * small_h(result_i.get_statevector(),
-                                                                           result_j.get_statevector(), ref_states)
+            nrm = abs(dps[i] - dps[j])
+            cost += nrm * small_h(result_i.get_statevector(), result_j.get_statevector(), ref_states)
     print(count)
     print(cost)
     count += 1
     return cost
 
 
-optimizer = ADAM(maxiter=5, tol=1e-06)
+optimizer = ADAM(maxiter=5, tol=1e-06, lr = 0.1)
 
 # Create the initial parameters (noting that our
 # single qubit variational form has 3 parameters)
