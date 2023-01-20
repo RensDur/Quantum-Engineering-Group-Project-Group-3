@@ -35,6 +35,22 @@ qubits = 1
 ref_states = [np.array([1, 0]), np.array([0, 1])]
 
 
+class Dataset:
+    @staticmethod
+    def gaussian_clusters(clusters: int, features: int, samples: int, seed: int = 999999) -> "Dataset":
+        pass
+
+    @staticmethod
+    def f():
+        np.random.seed(seed)
+        dataset = []
+        for cluster in range(clusters):
+            mu, sigma = np.random.random(), 0.1
+            cluster = np.random.normal(mu, sigma, samples)
+            dataset.append(cluster)
+        return np.concatenate(dataset)
+
+
 class Data:
 
     def __init__(self, cluster_number=2, cluster_size=10):
@@ -58,8 +74,8 @@ class Data:
         # y2 = np.random.normal(mu, sigma, 10)
 
         # multiply the data with pi to get the angle on the bloch sphere
-        x1 = -np.pi/2 + np.pi*(x1 - minimum)/(maximum-minimum)
-        x2 = -np.pi/2 + np.pi*(x1 - minimum)/(maximum-minimum)
+        x1 = -np.pi / 2 + np.pi * (x1 - minimum) / (maximum - minimum)
+        x2 = -np.pi / 2 + np.pi * (x1 - minimum) / (maximum - minimum)
         self.clusters = [x1, x2]
         self.plot_clusters(self.clusters)
 
@@ -80,7 +96,7 @@ class Data:
     def plot_clusters(self, clusters: List[np.array]) -> None:
         plt.figure(figsize=(10, 10))
         for i in range(self.cluster_number):
-            plt.hist(clusters[i], bins=20, alpha=0.5, label='cluster {}'.format(i))
+            plt.scatter(clusters[i], np.ones(len(clusters[i])) * (i + 1), label='cluster {}'.format(i))
         plt.legend()
         plt.show()
 
@@ -111,11 +127,11 @@ def get_var_form(initial_params, optim_params, qubits):
     qc = QuantumCircuit(qr)
     bind_dict = {}
     for i in range(qubits):
-        qc.u(initial_params[i], initial_params[i], 0, qr[i])
+        qc.u(initial_params[i], 0, 0, qr[i])
     for i in range(qubits - 1):
         qc.u(optim_params[i][0], optim_params[i][1], optim_params[i][2], qr[i])
         qc.cx(i, i + 1)
-    qc.u(0, optim_params[qubits - 1][1], 0, qr[qubits - 1])
+    qc.u(optim_params[qubits - 1][0], optim_params[qubits - 1][1], optim_params[qubits - 1][2], qr[qubits - 1])
     qc = qc.bind_parameters(bind_dict)
     # qc.measure_all()
     qc.save_statevector()
@@ -147,22 +163,25 @@ def objective_function(params):
     # Create circuit instance with paramters and simulate it
     global count
     cost = 0
+    state_vector_list = []
     for i in tqdm(range(len(dps))):
-        for j in range(len(dps)):
-            qc_i = transpile(get_var_form([dps[i]], params, qubits), backend=qi_backend)
-            result_i = qi_backend.run(qc_i).result()
+        qc_i = transpile(get_var_form([dps[i]], params, qubits), backend=qi_backend)
+        result = qi_backend.run(qc_i).result()
+        state_vector_list.append(result.get_statevector())
 
-            qc_j = transpile(get_var_form([dps[j]], params, qubits), backend=qi_backend)
-            result_j = qi_backend.run(qc_j).result()
+    for i in range(len(state_vector_list)):
+        for j in range(len(dps)):
+            result_i = state_vector_list[i]
+            result_j = state_vector_list[j]
             nrm = abs(dps[i] - dps[j])
-            cost += nrm * small_h(result_i.get_statevector(), result_j.get_statevector(), ref_states)
+            cost += nrm * small_h(result_i, result_j, ref_states)
     print(count)
     print(cost)
     count += 1
     return cost
 
 
-optimizer = ADAM(maxiter=5, tol=1e-06, lr = 0.1)
+optimizer = ADAM(maxiter=20, tol=1e-06, lr=0.1)
 
 # Create the initial parameters (noting that our
 # single qubit variational form has 3 parameters)
