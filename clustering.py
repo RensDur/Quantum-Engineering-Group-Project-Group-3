@@ -48,11 +48,13 @@ class Data:
         np.random.seed(999999)
         # cluster 1
         x1 = np.random.normal(mu, sigma, self.cluster_size)
+        minimum = np.min(x1)
         # y1 = np.random.normal(mu, sigma, 10)
 
         # cluster 2
         mu, sigma = .75, 0.1
         x2 = np.random.normal(mu, sigma, self.cluster_size)
+        maximum = np.max(x2)
         # y2 = np.random.normal(mu, sigma, 10)
 
         # multiply the data with pi to get the angle on the bloch sphere
