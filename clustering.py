@@ -53,7 +53,7 @@ class Dataset:
 
 class Data:
 
-    def __init__(self, cluster_number=2, cluster_size=10):
+    def __init__(self, cluster_number=2, cluster_size=100):
         self.clusters = []
         self.cluster_number = cluster_number
         self.cluster_size = cluster_size
@@ -74,8 +74,8 @@ class Data:
         # y2 = np.random.normal(mu, sigma, 10)
 
         # multiply the data with pi to get the angle on the bloch sphere
-        x1 = -np.pi / 2 + np.pi * (x1 - minimum) / (maximum - minimum)
-        x2 = -np.pi / 2 + np.pi * (x1 - minimum) / (maximum - minimum)
+        x1 = np.pi * (x1 - minimum) / (maximum - minimum)
+        x2 = np.pi * (x2 - minimum) / (maximum - minimum)
         self.clusters = [x1, x2]
         self.plot_clusters(self.clusters)
 
@@ -117,7 +117,7 @@ class Data:
         return clusters
 
 
-dataset = Data(cluster_size=10)
+dataset = Data(cluster_size=100)
 dps = dataset.get_full_dataset()
 
 
@@ -125,6 +125,7 @@ def get_var_form(initial_params, optim_params, qubits):
     qr = QuantumRegister(qubits, name="q")
     # cr = ClassicalRegister(qubits, name="c")
     qc = QuantumCircuit(qr)
+    optim_params = optim_params
     bind_dict = {}
     for i in range(qubits):
         qc.u(initial_params[i], 0, 0, qr[i])
@@ -166,7 +167,11 @@ def objective_function(params):
     state_vector_list = []
     for i in tqdm(range(len(dps))):
         qc_i = transpile(get_var_form([dps[i]], params, qubits), backend=qi_backend)
-        result = qi_backend.run(qc_i).result()
+        qc_job = qi_backend.run(qc_i)
+        # Wait for the job to finish
+        #   qc_job.wait_for_final_state()
+        # Extract the result
+        result = qc_job.result()
         state_vector_list.append(result.get_statevector())
 
     for i in range(len(state_vector_list)):
@@ -181,10 +186,11 @@ def objective_function(params):
     return cost
 
 
-optimizer = ADAM(maxiter=20, tol=1e-06, lr=0.1)
+optimizer = ADAM(maxiter=10, tol=1e-06, lr = 0.1)
 
 # Create the initial parameters (noting that our
 # single qubit variational form has 3 parameters)
+np.random.seed(10)
 params = [np.random.rand(3) for i in range(qubits)]
 result = optimizer.minimize(
     fun=objective_function,
