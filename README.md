@@ -3,4 +3,4 @@
 
 # 2d clustering
 Results: 
-[2d clustering blobs](./results/blobs-clustered.png?raw=true "2d clustering blobs")
+![2d clustering blobs](./results/blobs-clustered.png?raw=true "2d clustering blobs")
