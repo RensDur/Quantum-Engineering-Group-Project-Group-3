@@ -20,7 +20,6 @@ This repository contains all the files that we used in order to perform all expe
 
 1. A Jupyter Notebook that contains the code for the experiment
 2. A file or folder that contains all the results that we obtained.
-3. A README that contains references to those sections in the report where that specific experiment is explained. The results will also be covered in the report.
 
 # Quick access
 For each experiment, important files are listed in the table below.
