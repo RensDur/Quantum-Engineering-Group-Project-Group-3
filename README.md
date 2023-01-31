@@ -1,6 +1,6 @@
 <div align="center">
 
-## TN3175 Quantum Engineering Group Project (2022/23 Q2)
+**TN3175 Quantum Engineering Group Project (2022/23 Q2)**
 # Group 3
 
 <br>
